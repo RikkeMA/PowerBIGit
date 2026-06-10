@@ -1,0 +1,59 @@
+expression Category =
+		let
+		    Source = Csv.Document(File.Contents("C:\PowerBI\SourceFiles\Categ.csv"),[Delimiter=",", Columns=3, Encoding=1200, QuoteStyle=QuoteStyle.None]),
+		    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"product_category_id", Int64.Type}, {"product_category_name_dk", type text}, {"product_category_name_uk", type text}}),
+		    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"product_category_name_dk"}),
+		    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"product_category_id", "Category_Id"}, {"product_category_name_uk", "Category"}})
+		in
+		    #"Renamed Columns"
+	lineageTag: 7e9c5732-31c5-44d8-87a3-c55921eef4e4
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Region =
+		let
+		    Source = Sql.Database("localhost", "TeaShop"),
+		    geo_region = Source{[Schema="geo",Item="region"]}[Data],
+		    #"Renamed Columns" = Table.RenameColumns(geo_region,{{"region_txt", "Region"}})
+		in
+		    #"Renamed Columns"
+	lineageTag: 048bc63b-e6ad-4003-bd09-e73b1d7c026d
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Location =
+		let
+		    Source = Sql.Database("localhost", "TeaShop"),
+		    geo_city = Source{[Schema="geo",Item="city"]}[Data],
+		    #"Renamed Columns" = Table.RenameColumns(geo_city,{{"city_name", "City"}, {"postal_code", "Postal Code"}}),
+		    #"Expanded geo.country" = Table.ExpandRecordColumn(#"Renamed Columns", "geo.country", {"country_code", "country_txt_uk"}, {"Country Code", "Country"}),
+		    #"Merged Queries" = Table.NestedJoin(#"Expanded geo.country", {"region_id"}, Region, {"region_id"}, "Region", JoinKind.LeftOuter),
+		    #"Expanded Region" = Table.ExpandTableColumn(#"Merged Queries", "Region", {"Region"}, {"Region"}),
+		    #"Removed Columns" = Table.RemoveColumns(#"Expanded Region",{"region_id"})
+		in
+		    #"Removed Columns"
+	lineageTag: a92e16c9-a94d-49b9-ae69-5cc02e65ac57
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Department =
+		let
+		    Source = Sql.Database("localhost", "TeaShop"),
+		    hr_department = Source{[Schema="hr",Item="department"]}[Data],
+		    #"Removed Columns" = Table.RemoveColumns(hr_department,{"sales_target"}),
+		    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"name", "Department"}})
+		in
+		    #"Renamed Columns"
+	lineageTag: eb4c8fb7-b7c2-4d65-a7d5-7f35c03cad77
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,145 @@
+table Product
+	lineageTag: effd5e91-7681-4dcb-819d-a717a7dc3396
+
+	column Product_Id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 164488f4-20d6-426d-bf89-f7190b838504
+		summarizeBy: none
+		sourceColumn: Product_Id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Product
+		dataType: string
+		lineageTag: 8d751453-e2f2-4cb8-b93d-9e20ff485a4e
+		summarizeBy: none
+		sourceColumn: Product
+
+		annotation SummarizationSetBy = Automatic
+
+	column Weight
+		dataType: int64
+		formatString: 0
+		lineageTag: b7d811a9-0123-449d-8d98-a9621e1d2299
+		summarizeBy: none
+		sourceColumn: Weight
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Retail Price'
+		dataType: double
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: b4e0df36-46e5-478f-a881-9a180b4333d7
+		summarizeBy: none
+		sourceColumn: Retail Price
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	column 'Cost Price'
+		dataType: double
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: 8a4da744-42fc-49a6-9ec7-32d43194b966
+		summarizeBy: none
+		sourceColumn: Cost Price
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	column Category
+		dataType: string
+		lineageTag: 8d7f26af-f17a-48af-a21a-f3c87a104816
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Price per Kilo' = 1000 * 'Product'[Retail Price] / 'Product'[Weight]
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: b5e87fb5-973f-418c-b8f2-12b9566b682d
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	column PriceCategory# = ```
+			
+			IF ( 
+				'Product'[Price per Kilo] < 650, 
+				1, 
+				IF ( 
+					'Product'[Price per Kilo] < 850, 
+					2 ,
+					3
+				)
+			) 
+			```
+		isHidden
+		formatString: 0
+		lineageTag: c22f9375-5fe8-4a13-8e1c-daec4488ac30
+		summarizeBy: none
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column PriceCategory = ```
+			
+			IF ( 
+				'Product'[PriceCategory#] =1, 
+				"Low", 
+				IF ( 
+					'Product'[PriceCategory#] = 2, 
+					"Medium" ,
+					"High"
+				)
+			) 
+			```
+		lineageTag: a471cd0c-5d68-4443-a173-2a16cbabee56
+		summarizeBy: none
+		sortByColumn: PriceCategory#
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Products
+		lineageTag: 1e8b9852-b122-499c-9e11-6f5a4a2856ea
+
+		level Category
+			lineageTag: 32b29060-afd6-4821-8a0e-f63ff9747186
+			column: Category
+
+		level Product
+			lineageTag: d0f0bbc2-21e5-4987-b2b0-b85271a9c8a4
+			column: Product
+
+	partition Product = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\PowerBI\SourceFiles\products.csv"),[Delimiter=",", Columns=7, Encoding=1200, QuoteStyle=QuoteStyle.None]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}, {"Column2", type text}, {"Column3", type text}, {"Column4", type text}, {"Column5", type text}, {"Column6", type text}, {"Column7", type text}}),
+				    #"Removed Top Rows" = Table.Skip(#"Changed Type",1),
+				    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Promoted Headers",{{"product_id", Int64.Type}, {"product_name_dk", type text}, {"product_name_uk", type text}, {"quantity_g", Int64.Type}, {"product_category_id", Int64.Type}, {"retail_price", type number}, {"cost_price", type number}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type1",{"product_name_dk"}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"product_id", "Product_Id"}, {"product_name_uk", "Product"}, {"quantity_g", "Weight"}, {"product_category_id", "Category_Id"}, {"retail_price", "Retail Price"}, {"cost_price", "Cost Price"}}),
+				    #"Merged Queries" = Table.NestedJoin(#"Renamed Columns", {"Category_Id"}, Category, {"Category_Id"}, "Category", JoinKind.LeftOuter),
+				    #"Expanded Category" = Table.ExpandTableColumn(#"Merged Queries", "Category", {"Category"}, {"Category.1"}),
+				    #"Renamed Columns1" = Table.RenameColumns(#"Expanded Category",{{"Category.1", "Category"}}),
+				    #"Removed Columns1" = Table.RemoveColumns(#"Renamed Columns1",{"Category_Id"})
+				in
+				    #"Removed Columns1"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

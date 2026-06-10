@@ -1,0 +1,24 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: da-DK
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["Category","Product","Employee","Orders","Company","Contact","Location","Region","Department","Order Lines"]
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Product
+ref table Employee
+ref table Orders
+ref table Company
+ref table Contact
+ref table 'Order Lines'
+ref table DimCalendar
+
+ref cultureInfo en-US
+

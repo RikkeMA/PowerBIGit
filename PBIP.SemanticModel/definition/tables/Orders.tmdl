@@ -1,0 +1,90 @@
+table Orders
+	lineageTag: accffaa4-2197-4fc0-85f7-cbfe07b98637
+
+	column order_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 51c27c3e-16b8-4e82-91b6-98a7880e3ebc
+		summarizeBy: none
+		sourceColumn: order_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Order Date'
+		dataType: dateTime
+		formatString: dd-mm-yyyy
+		lineageTag: 839a48a3-0b3a-4e08-9df4-610d99808b94
+		summarizeBy: none
+		sourceColumn: Order Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
+	column employee_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 9c2018bb-c619-4237-a3d5-1abdb42bc0a7
+		summarizeBy: none
+		sourceColumn: employee_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ship Date'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: a7259430-6fc8-4419-b347-28386d6a714d
+		summarizeBy: none
+		sourceColumn: Ship Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Freight
+		dataType: double
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: a198c6b2-565d-426d-adc6-7ef10824f67d
+		summarizeBy: none
+		sourceColumn: Freight
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	column contact_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: bcbf2a5a-6397-4608-9116-c89fa1235a17
+		summarizeBy: none
+		sourceColumn: contact_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Orders = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("localhost", "TeaShop"),
+				    sale_orders = Source{[Schema="sale",Item="orders"]}[Data],
+				    #"Renamed Columns" = Table.RenameColumns(sale_orders,{{"order_date", "Order Date"}, {"ship_date", "Ship Date"}, {"freight_dkk", "Freight"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Order Date", type date}, {"Ship Date", type date}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"company_id"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

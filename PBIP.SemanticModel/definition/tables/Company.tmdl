@@ -1,0 +1,111 @@
+table Company
+	lineageTag: 06b6bf93-817e-47e8-abcc-cae9939f7ad9
+
+	column Company
+		dataType: string
+		lineageTag: f4fc2f7a-8e02-4476-958b-bc8cd7a265c3
+		summarizeBy: none
+		sourceColumn: Company
+
+		annotation SummarizationSetBy = Automatic
+
+	column Address
+		dataType: string
+		lineageTag: cefdb534-62f7-4fe9-8a4f-d904a6491899
+		dataCategory: Address
+		summarizeBy: none
+		sourceColumn: Address
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Postal Code'
+		dataType: int64
+		formatString: 0
+		lineageTag: 4f10177d-d548-494c-90d6-13f1f315a606
+		dataCategory: PostalCode
+		summarizeBy: none
+		sourceColumn: Postal Code
+
+		annotation SummarizationSetBy = User
+
+	column company_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ffeed763-7e90-48e2-83c0-a145360b9b9a
+		summarizeBy: none
+		sourceColumn: company_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column City
+		dataType: string
+		lineageTag: 490cfe29-b07f-4da0-83c2-bb95a5eb90f5
+		dataCategory: City
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Country Code'
+		dataType: string
+		lineageTag: 6091a089-2062-47e5-b7fe-f9bf00403937
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: Country Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: 359a66ee-f786-41fe-957c-57a4761bfb2b
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: 6a68dfe2-fd9c-4f5a-b123-a2f684635412
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Geography
+		lineageTag: 04a50b4f-d440-4456-9a24-384642daddff
+
+		level 'Country Code'
+			lineageTag: 95a2c9d3-dc91-486b-bb0f-b34a901f4a1e
+			column: 'Country Code'
+
+		level Region
+			lineageTag: ca2fdb3f-7250-4d7c-b394-fa293508b6ae
+			column: Region
+
+		level City
+			lineageTag: 39f9e7c1-ad02-4cd6-81b0-c34b969e3eab
+			column: City
+
+	partition Company = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("localhost", "TeaShop"),
+				    cust_company = Source{[Schema="cust",Item="company"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(cust_company,{ "address_line2", "sales_target"}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"name", "Company"}, {"address_line1", "Address"}, {"postal_code", "Postal Code"}}),
+				    #"Merged Queries" = Table.NestedJoin(#"Renamed Columns", {"Postal Code", "country_id"}, Location, {"Postal Code", "country_id"}, "Location", JoinKind.LeftOuter),
+				    #"Expanded Location" = Table.ExpandTableColumn(#"Merged Queries", "Location", {"City", "Country Code", "Country", "Region"}, {"City", "Country Code", "Country", "Region"}),
+				    #"Removed Columns1" = Table.RemoveColumns(#"Expanded Location",{"country_id"})
+				in
+				    #"Removed Columns1"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

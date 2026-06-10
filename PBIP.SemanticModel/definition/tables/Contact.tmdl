@@ -1,0 +1,58 @@
+table Contact
+	lineageTag: f2c84f32-a9e7-4f1c-98ac-c56b97b294b3
+
+	column company_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0e3e5d46-683b-4aeb-98e6-32517ba14059
+		summarizeBy: none
+		sourceColumn: company_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Contact
+		dataType: string
+		lineageTag: 96e66795-2b33-4bdd-b809-ffb12bddeef6
+		summarizeBy: none
+		sourceColumn: Contact
+
+		annotation SummarizationSetBy = Automatic
+
+	column email_address
+		dataType: string
+		lineageTag: 9f5a0d73-4491-436f-8cb6-c6605bf9fe5a
+		summarizeBy: none
+		sourceColumn: email_address
+
+		annotation SummarizationSetBy = Automatic
+
+	column contact_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d75c6459-066b-43ae-ade7-202b4013020d
+		summarizeBy: none
+		sourceColumn: contact_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Contact = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("localhost", "TeaShop"),
+				    cust_contact_company = Source{[Schema="cust",Item="contact_company"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(cust_contact_company,{"contact_init", "phone_no", "mobile_phone_no"}),
+				    #"Merged Columns" = Table.CombineColumns(#"Removed Columns",{"first_name", "last_name"},Combiner.CombineTextByDelimiter(" ", QuoteStyle.None),"Contact")
+				in
+				    #"Merged Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

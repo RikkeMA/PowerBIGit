@@ -1,0 +1,137 @@
+table DimCalendar
+	lineageTag: ed75226c-5c74-422f-bc6c-a91d7b73314e
+	dataCategory: Time
+
+	column Date
+		isKey
+		formatString: General Date
+		lineageTag: 1f570f69-9a72-4868-8351-6312fd98e1dd
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		formatString: 0
+		lineageTag: 29fe28a7-6e85-44aa-b32e-cd32209e3e16
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Year]
+
+		annotation SummarizationSetBy = User
+
+	column Month
+		lineageTag: 33dd6a9b-abdd-47b8-b784-82c70f551dd8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Month]
+		sortByColumn: MonthNo
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthNo
+		isHidden
+		formatString: 0
+		lineageTag: 0dc57632-cff5-4b7c-a502-b24376e491bf
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthNo]
+
+		annotation SummarizationSetBy = User
+
+	column Quarter
+		lineageTag: 63f2ebe9-d930-4dbe-a97b-85e2a120538b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Quarter]
+
+		annotation SummarizationSetBy = Automatic
+
+	column QuarterNo
+		isHidden
+		lineageTag: 0bc2a4c6-46f7-4eb2-8fad-dfd11fd48d94
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [QuarterNo]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Day
+		formatString: 0
+		lineageTag: 577d5c4c-84e5-4348-86ae-0c0a6b49a242
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Day]
+
+		annotation SummarizationSetBy = User
+
+	column Weekday
+		lineageTag: d527423a-fe93-4d87-b1ad-9cbade4913b5
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Weekday]
+		sortByColumn: WeekdayNo
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekdayNo
+		isHidden
+		formatString: 0
+		lineageTag: 60945047-f7fb-4735-970a-c92bfa07b052
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [WeekdayNo]
+
+		annotation SummarizationSetBy = User
+
+	column WeekNumber
+		formatString: 0
+		lineageTag: e23c8d30-ccda-4662-84d1-820957dbc705
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [WeekNumber]
+
+		annotation SummarizationSetBy = User
+
+	hierarchy Time
+		lineageTag: e05b41a5-655c-4b74-8444-4f04fa7b8d20
+
+		level Year
+			lineageTag: 51cc5bae-9022-41ec-8d7d-1c3204050978
+			column: Year
+
+		level Month
+			lineageTag: 4be5a4c4-4e1b-4b9b-964e-fc7527c41890
+			column: Month
+
+		level Day
+			lineageTag: c5f9411c-411c-4f17-96bf-e388d959ec39
+			column: Day
+
+	partition DimCalendar = calculated
+		mode: import
+		source =
+				
+				VAR __Yr = YEAR(MAX(Orders[Order Date]))
+				VAR __YearsBack = 6
+				VAR __Locale = "en-US"
+				RETURN
+				ADDCOLUMNS(
+				    CALENDAR(
+				        DATE(__Yr - __YearsBack,1,1),
+				        DATE(__Yr,12,31)
+				    ),
+				    "Year", YEAR([Date]),
+				    "Month", FORMAT([Date],"MMM",__Locale),
+				    "MonthNo", MONTH([Date]),
+				    "Quarter", FORMAT([Date],"q") & ". qtr.",
+				    "QuarterNo",FORMAT([Date],"q"),
+				    "Day", DAY([Date]),
+				    "Weekday", FORMAT([Date],"ddd", __Locale),
+				    "WeekdayNo", WEEKDAY([Date],2), -- Starting day of week = Monday
+				    "WeekNumber", WEEKNUM([Date],21) -- ISOWeek number
+				)
+
+	annotation PBI_Id = 0d4dd12aebf9440fb4daaa5c3cba1690
+

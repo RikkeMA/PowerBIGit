@@ -1,0 +1,29 @@
+relationship a31fea0c-afdc-5b9d-3eff-ba0eec5a54e7
+	fromColumn: 'Order Lines'.product_id
+	toColumn: Product.Product_Id
+
+relationship cd894df0-a382-707e-925d-3bb2ca3a3b2c
+	fromColumn: Orders.employee_id
+	toColumn: Employee.employee_id
+
+relationship 30f9b731-e609-261b-b25c-26f8ffef5413
+	fromColumn: 'Order Lines'.order_id
+	toColumn: Orders.order_id
+
+relationship 561eede0-451d-6f5a-fbdf-2b0e464667de
+	fromColumn: Orders.contact_id
+	toColumn: Contact.contact_id
+
+relationship d1324cf7-b949-0c46-672a-6d9850049be6
+	fromColumn: Contact.company_id
+	toColumn: Company.company_id
+
+relationship cf761727-858e-887a-d4aa-be9433b17d81
+	fromColumn: Orders.'Order Date'
+	toColumn: DimCalendar.Date
+
+relationship b6c4cbc9-df0b-d579-eed1-1a3b1fd3dfed
+	isActive: false
+	fromColumn: Orders.'Ship Date'
+	toColumn: DimCalendar.Date
+

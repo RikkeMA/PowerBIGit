@@ -1,0 +1,118 @@
+table 'Order Lines'
+	lineageTag: 25353437-9e23-4baf-83fa-86bf78351810
+
+	measure #Products = SUM( 'Order Lines'[Quantity])
+		formatString: #,0
+		lineageTag: 18adab51-384e-4540-b621-4c55f2cfb36d
+
+	measure Sales = ```
+			
+			SUMX(
+				'Order Lines', 
+				'Order Lines'[Quantity] * ( 100 - 'Order Lines'[Discount %]) /100 * RELATED( 'Product'[Retail Price] ) 
+			)
+			
+			```
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: 34e933ef-84f9-4649-9c3f-8040d591d347
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	measure Expenses = ```
+			
+			SUMX( 
+				'Order Lines', 
+				'Order Lines'[Quantity]  * RELATED( 'Product'[Cost Price] ) 
+			)
+			```
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: 6dc94cb0-92ea-4b73-9963-0c4483a2f9c2
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	measure Margin = [Sales] - [Expenses]
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: 505aa84a-64fc-4f58-a955-be16b1fed532
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	measure 'Margin %' = ( [Sales] - [Expenses]) / [Sales]
+		formatString: #,0.0\ %;-#,0.0\ %;#,0.0\ %
+		lineageTag: f689c847-5e18-4628-aa18-72a5f5655855
+
+	measure 'Sales Budget' = ```
+			
+			IF (
+			    [Sales],
+			    1.1 * CALCULATE(
+			        [Sales], 
+			        SAMEPERIODLASTYEAR( DimCalendar[Date] )
+			    )
+			)    
+			```
+		formatString: #,0.00\ "kr.";-#,0.00\ "kr.";#,0.00\ "kr."
+		lineageTag: b458dd1b-d2dc-4830-988f-c0bf613f9236
+
+		annotation PBI_FormatHint = {"currencyCulture":"da-DK"}
+
+	column order_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: db0c4058-5f22-4206-92d2-0fa2fb89033d
+		summarizeBy: none
+		sourceColumn: order_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 382f8c58-09f9-437e-8556-5c7502c061e3
+		summarizeBy: none
+		sourceColumn: product_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Quantity
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 29210bfc-87e2-4a93-adc9-7850bea72e63
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column 'Discount %'
+		dataType: int64
+		formatString: 0
+		lineageTag: 660097c8-f282-499b-a2b4-a4f6c8631f62
+		summarizeBy: average
+		sourceColumn: Discount %
+
+		annotation SummarizationSetBy = User
+
+	partition 'Order Lines' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("localhost", "TeaShop"),
+				    sale_orderline = Source{[Schema="sale",Item="orderline"]}[Data],
+				    #"Filtered Rows" = Table.SelectRows(sale_orderline, each [order_type] = 1),
+				    #"Removed Columns" = Table.RemoveColumns(#"Filtered Rows",{"order_type", "line_number"}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"quantity", "Quantity"}, {"discount_pct", "Discount %"}})
+				in
+				    #"Renamed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

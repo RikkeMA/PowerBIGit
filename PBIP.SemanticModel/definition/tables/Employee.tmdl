@@ -1,0 +1,86 @@
+table Employee
+	lineageTag: 6ceab076-4299-4284-bd00-7833a589afa0
+
+	column employee_id
+		dataType: int64
+		isHidden
+		isKey
+		formatString: 0
+		lineageTag: 6c188dcc-f348-4a7e-8838-a47775acd9e0
+		summarizeBy: none
+		sourceColumn: employee_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Born
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 328beb28-7c9c-4748-af06-1402c3301591
+		summarizeBy: none
+		sourceColumn: Born
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Hired
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: cdb42f53-7c18-4648-af32-96879d0d066d
+		summarizeBy: none
+		sourceColumn: Hired
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Employee
+		dataType: string
+		lineageTag: 0f5c6d9b-61ca-4f95-b996-2f725e8c1b2d
+		isDefaultLabel
+		summarizeBy: none
+		sourceColumn: Employee
+
+		annotation SummarizationSetBy = Automatic
+
+	column Department
+		dataType: string
+		lineageTag: e1a92a6d-7696-40a7-a3a4-93635f7f17ef
+		summarizeBy: none
+		sourceColumn: Department
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Employees
+		lineageTag: c9ca8108-ae34-44b4-95df-71fd032d31c4
+
+		level Department
+			lineageTag: bf97c6a8-f1d6-4be0-bc82-bc2855224d5c
+			column: Department
+
+		level Employee
+			lineageTag: 249af36f-c556-4a69-a80b-7847fba258d1
+			column: Employee
+
+	partition Employee = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("C:\PowerBI\SourceFiles\Employees.xlsx"), null, true),
+				    Ansatte_Table = Source{[Item="Ansatte",Kind="Table"]}[Data],
+				    #"Changed Type" = Table.TransformColumnTypes(Ansatte_Table,{{"employee_id", Int64.Type}, {"first_name", type text}, {"last_name", type any}, {"sales_target", Int64.Type}, {"manager_id", Int64.Type}, {"Born", type date}, {"Hired", type text}, {"dept_id", Int64.Type}, {"extention", Int64.Type}}),
+				    #"Changed Type with Locale" = Table.TransformColumnTypes(#"Changed Type", {{"Hired", type date}}, "en-US"),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type with Locale",{{"last_name", type text}}),
+				    #"Merged Columns" = Table.CombineColumns(#"Changed Type1",{"first_name", "last_name"},Combiner.CombineTextByDelimiter(" ", QuoteStyle.None),"Employee"),
+				    #"Merged Queries" = Table.NestedJoin(#"Merged Columns", {"dept_id"}, Department, {"dept_id"}, "Department", JoinKind.LeftOuter),
+				    #"Expanded Department" = Table.ExpandTableColumn(#"Merged Queries", "Department", {"Department"}, {"Department"}),
+				    #"Removed Other Columns" = Table.SelectColumns(#"Expanded Department",{"employee_id", "Employee", "Born", "Hired", "Department"})
+				in
+				    #"Removed Other Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
